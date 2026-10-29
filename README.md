@@ -1,5 +1,7 @@
 # Tech-Me
 
+[![Validate Tech-Me](https://github.com/L4ncelotz/tech-me-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/L4ncelotz/tech-me-skills/actions/workflows/validate.yml)
+
 **Evidence-based technical architecture decisions, without the stack bias.**
 
 Tech-Me is a portable Agent Skill that interviews you **only as much as needed**, evaluates requirements and hard constraints before choosing technologies, challenges architectural assumptions, and explains the trade-offs behind its recommendation.
@@ -22,10 +24,10 @@ Tech-Me is a portable Agent Skill that interviews you **only as much as needed**
 
 ## Install
 
-After this repository is published as `L4ncelotz/tech-me` on GitHub:
+After this repository is published as `L4ncelotz/tech-me-skills` on GitHub:
 
 ```bash
-npx skills add L4ncelotz/tech-me --skill tech-me
+npx skills add L4ncelotz/tech-me-skills --skill tech-me
 ```
 
 For local development (from the repository root):

@@ -4,7 +4,7 @@ Contributions are welcome, particularly focused improvements to question quality
 
 ## Guidelines
 
-1. Open an issue describing the decision failure or missed scenario, when practical.
+1. Open an [issue](https://github.com/L4ncelotz/tech-me-skills/issues) describing the decision failure or missed scenario, when practical.
 2. Keep `skills/tech-me/SKILL.md` focused and portable. Put lengthy guidance under `references/` instead.
 3. Do not add a framework, cloud vendor, language, or MCP server requirement without a compelling cross-agent reason.
 4. Add or update an `evals/scenarios.json` case for meaningful behavioral changes, including expected and undesired behavior.
