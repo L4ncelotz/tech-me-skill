@@ -125,6 +125,10 @@ def validate_scenarios(path: Path) -> list[str]:
             value = item.get(field)
             if not isinstance(value, list) or not value or any(not isinstance(v, str) or not v.strip() for v in value):
                 errors.append(f"{label} {field} must be a non-empty list of strings.")
+        if "turns" in item:
+            turns = item["turns"]
+            if not isinstance(turns, list) or not turns or any(not isinstance(t, str) or not t.strip() for t in turns):
+                errors.append(f"{label} turns must be a non-empty list of strings when present.")
     missing = CATEGORIES - seen_categories
     if missing:
         errors.append(f"Missing evaluation categories: {', '.join(sorted(missing))}")

@@ -15,6 +15,21 @@ from pack_release import assert_clean_git_tree, is_forbidden, pack_release, veri
 from run_evals import filter_scenarios, load_scenarios, load_skill_prompt  # noqa: E402
 
 
+def create_git_repo(tmp_dir: str, tag: str | None = None) -> Path:
+    """Create a minimal committed Git repository for packaging tests."""
+    repo_dir = Path(tmp_dir) / "test_repo"
+    repo_dir.mkdir()
+    subprocess.run(["git", "init"], cwd=repo_dir, capture_output=True, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "config", "user.email", "test@test.local"], cwd=repo_dir, check=True)
+    (repo_dir / "file.txt").write_text("initial", encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=repo_dir, capture_output=True, check=True)
+    if tag:
+        subprocess.run(["git", "tag", "-a", tag, "-m", f"Tag {tag}"], cwd=repo_dir, capture_output=True, check=True)
+    return repo_dir
+
+
 class ScriptTests(unittest.TestCase):
     def test_forbidden_patterns(self):
         self.assertTrue(is_forbidden(".git/config"))
@@ -71,6 +86,7 @@ class ScriptTests(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0)
         self.assertIn("[DRY RUN] Scenario: historical-preference-bias", proc.stdout)
+        self.assertIn("Scripted follow-up turns: 0", proc.stdout)
         self.assertIn("Dry-run completed", proc.stdout)
 
     def test_run_evals_prepare_fixtures(self):
@@ -96,6 +112,29 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(data.get("status"), "not_evaluated")
             self.assertIn("historical-preference-bias", data.get("fixtures", {}))
 
+    def test_run_evals_exports_predetermined_followups(self):
+        """Multi-turn scenarios export their scripted turns for external runners."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_file = Path(tmp_dir) / "fixtures.json"
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "run_evals.py"),
+                    "--prepare-fixtures",
+                    "--scenarios",
+                    "multi-turn-honor-stop-trigger",
+                    "--output",
+                    str(out_file),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            data = json.loads(out_file.read_text(encoding="utf-8"))
+            payload = data["fixtures"]["multi-turn-honor-stop-trigger"]
+            self.assertEqual(len(payload["predetermined_followups"]), 3)
+            self.assertIn("recommend now", payload["predetermined_followups"][-1])
+
     def test_pack_release_rejects_missing_git(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             out_dir = Path(tmp_dir) / "dist"
@@ -107,14 +146,7 @@ class ScriptTests(unittest.TestCase):
 
     def test_pack_release_rejects_dirty_tree(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            repo_dir = Path(tmp_dir) / "test_repo"
-            repo_dir.mkdir()
-            subprocess.run(["git", "init"], cwd=repo_dir, capture_output=True, check=True)
-            subprocess.run(["git", "config", "user.name", "Test"], cwd=repo_dir, check=True)
-            subprocess.run(["git", "config", "user.email", "test@test.local"], cwd=repo_dir, check=True)
-            (repo_dir / "file.txt").write_text("initial", encoding="utf-8")
-            subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
-            subprocess.run(["git", "commit", "-m", "init"], cwd=repo_dir, check=True)
+            repo_dir = create_git_repo(tmp_dir)
 
             # Introduce an untracked file
             (repo_dir / "untracked.txt").write_text("untracked", encoding="utf-8")
@@ -126,14 +158,7 @@ class ScriptTests(unittest.TestCase):
 
     def test_pack_release_rejects_invalid_ref(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            repo_dir = Path(tmp_dir) / "test_repo"
-            repo_dir.mkdir()
-            subprocess.run(["git", "init"], cwd=repo_dir, capture_output=True, check=True)
-            subprocess.run(["git", "config", "user.name", "Test"], cwd=repo_dir, check=True)
-            subprocess.run(["git", "config", "user.email", "test@test.local"], cwd=repo_dir, check=True)
-            (repo_dir / "file.txt").write_text("initial", encoding="utf-8")
-            subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
-            subprocess.run(["git", "commit", "-m", "init"], cwd=repo_dir, check=True)
+            repo_dir = create_git_repo(tmp_dir)
 
             out_dir = Path(tmp_dir) / "dist"
             with self.assertRaises(RuntimeError) as ctx:
@@ -147,14 +172,7 @@ class ScriptTests(unittest.TestCase):
 
     def test_pack_release_clean_archive_excludes_secrets_and_caches(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            repo_dir = Path(tmp_dir) / "test_repo"
-            repo_dir.mkdir()
-            subprocess.run(["git", "init"], cwd=repo_dir, capture_output=True, check=True)
-            subprocess.run(["git", "config", "user.name", "Test"], cwd=repo_dir, check=True)
-            subprocess.run(["git", "config", "user.email", "test@test.local"], cwd=repo_dir, check=True)
-            (repo_dir / "file.txt").write_text("initial", encoding="utf-8")
-            subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
-            subprocess.run(["git", "commit", "-m", "init"], cwd=repo_dir, check=True)
+            repo_dir = create_git_repo(tmp_dir, tag="v0.1.0")
 
             # Untracked .env and cache files in working tree
             (repo_dir / ".env").write_text("SECRET=123", encoding="utf-8")
@@ -182,6 +200,72 @@ class ScriptTests(unittest.TestCase):
                     self.assertNotIn(".env", name)
                     self.assertNotIn("__pycache__", name)
                     self.assertNotIn(".git", name)
+
+    def test_pack_release_rejects_untagged_release_version(self):
+        """Reproduces the reported issue: an arbitrary --version without a matching tag must fail."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir)
+            out_dir = Path(tmp_dir) / "dist"
+            with self.assertRaises(RuntimeError) as ctx:
+                pack_release(version="9.9.9", output_dir=out_dir, repo_root=repo_dir, check_clean=False)
+            self.assertIn("Release tag 'v9.9.9' not found", str(ctx.exception))
+            self.assertFalse((out_dir / "tech-me-9.9.9.zip").exists())
+
+    def test_pack_release_allows_untagged_when_explicit(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir)
+            out_dir = Path(tmp_dir) / "dist"
+            zip_path = pack_release(
+                version="9.9.9",
+                output_dir=out_dir,
+                repo_root=repo_dir,
+                check_clean=False,
+                require_tag=False,
+            )
+            self.assertEqual(zip_path.name, "tech-me-9.9.9.zip")
+            self.assertTrue(zip_path.is_file())
+
+    def test_pack_release_rejects_tag_ref_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir, tag="v0.1.0")
+            (repo_dir / "file.txt").write_text("changed", encoding="utf-8")
+            subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
+            subprocess.run(["git", "commit", "-m", "second"], cwd=repo_dir, capture_output=True, check=True)
+
+            out_dir = Path(tmp_dir) / "dist"
+            with self.assertRaises(RuntimeError) as ctx:
+                pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir, ref="HEAD")
+            self.assertIn("does not point at ref", str(ctx.exception))
+
+    def test_pack_release_accepts_matching_tag_at_head(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir, tag="v0.1.0")
+            out_dir = Path(tmp_dir) / "dist"
+            zip_path = pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir)
+            self.assertTrue(zip_path.is_file())
+
+    def test_pack_release_rejects_lightweight_release_tag(self):
+        """A lightweight tag must not satisfy release packaging even when the name matches."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir)
+            subprocess.run(["git", "tag", "v0.1.0"], cwd=repo_dir, capture_output=True, check=True)
+            out_dir = Path(tmp_dir) / "dist"
+            with self.assertRaises(RuntimeError) as ctx:
+                pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir, check_clean=False)
+            self.assertIn("lightweight tag", str(ctx.exception))
+            self.assertFalse((out_dir / "tech-me-0.1.0.zip").exists())
+
+    def test_pack_release_rejects_branch_named_like_release_tag(self):
+        """A branch sharing the version name must not satisfy release packaging."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir)
+            subprocess.run(["git", "branch", "v0.1.0"], cwd=repo_dir, capture_output=True, check=True)
+            out_dir = Path(tmp_dir) / "dist"
+            with self.assertRaises(RuntimeError) as ctx:
+                pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir, check_clean=False)
+            self.assertIn("Release tag 'v0.1.0' not found", str(ctx.exception))
+            self.assertIn("a branch named 'v0.1.0' exists", str(ctx.exception))
+            self.assertFalse((out_dir / "tech-me-0.1.0.zip").exists())
 
 
 if __name__ == "__main__":

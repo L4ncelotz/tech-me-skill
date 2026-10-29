@@ -34,17 +34,16 @@ git push origin v0.1.0
 ```
 
 ### 3. Build Clean Distribution Package
-Before creating the GitHub release, package the release archive. Release packaging requires a clean, committed Git working tree and extracts exclusively from the committed Git tree (`git archive`):
+Before creating the GitHub release, package the release archive. Release packaging requires a clean, committed Git working tree, verifies that `--version` matches an annotated Git tag (`v<version>`) pointing at the packaged ref, and extracts exclusively from the committed Git tree (`git archive`):
+
+Fail closed cases: missing tag, non-annotated tag objects (a lightweight tag points directly at a commit), a branch sharing the tag name, tag/ref commit mismatch, uncommitted changes, or leaked artifacts. Use `--allow-untagged` only for throwaway local archives; never publish one.
 ```bash
 # Automated packaging with integrity assertions
 python scripts/pack_release.py --version 0.1.0
 ```
 This creates `dist/tech-me-0.1.0.zip` containing only committed files and asserts zero leakage of `.git/`, `__pycache__`, `.pytest_cache`, `.venv`, `.env*`, or temporary files.
 
-Alternatively, if packaging directly via Git:
-```bash
-git archive --format=zip --prefix=tech-me-0.1.0/ -o dist/tech-me-0.1.0.zip HEAD
-```
+Do not package releases with a hand-rolled `git archive` command. `pack_release.py` is the single supported release path: a manual `git archive` skips the version/tag/commit verification and the forbidden-artifact scan, so an archive built that way must never be distributed.
 
 ### 4. Create GitHub Release
 Attach the generated distribution archive to the GitHub Release:

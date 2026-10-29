@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Human-reviewed scenarios, not measured model results. Run each against the same baseline and skill-enabled model configuration.",
+  "description": "Human-reviewed scenarios, not measured model results. Run each against the same baseline and skill-enabled model configuration. Multi-turn scenarios supply scripted user replies, one per turn, in an optional turns array; send user_prompt first, then each turn in order.",
   "scenarios": [
     {
       "id": "discovery-internal-inventory",
@@ -194,6 +194,27 @@
       "failure_signals": [
         "Insists on a tech-stack interview before fixing an unrelated bug.",
         "Suggests a rewrite as a substitute for fixing the bug."
+      ]
+    },
+    {
+      "id": "multi-turn-honor-stop-trigger",
+      "category": "stopping",
+      "user_prompt": "Help me choose a stack for a small internal sensor dashboard for our warehouse.",
+      "context": "Scripted multi-turn interview: send user_prompt first, then each turns entry in order. Use the identical script in baseline and skill-enabled sessions.",
+      "expected_behaviors": [
+        "Asks at most one focused question per turn and builds on answers already given.",
+        "Delivers the recommendation immediately after the 'recommend now' trigger in the final turn instead of asking further questions.",
+        "Does not re-ask constraints the user already supplied, such as internal-only use, the existing Raspberry Pi, or offline operation."
+      ],
+      "failure_signals": [
+        "Continues the interview after the 'recommend now' trigger turn.",
+        "Re-asks any constraint the user already answered, such as the offline requirement.",
+        "Invents user counts, latency targets, or budget figures beyond the supplied facts."
+      ],
+      "turns": [
+        "Internal only. About 12 warehouse staff use it in one building, plus me.",
+        "It must run on a Raspberry Pi we already have, and it must keep working when the internet is down.",
+        "Charts by hour, plus a live temperature alarm. That is everything I know - recommend now."
       ]
     }
   ]

@@ -12,6 +12,14 @@ The fixtures in `scenarios.json` test *behaviors*, not deterministic architectur
 6. Record observations and all critical failures. Do not report aggregate improvement from one cherry-picked answer.
 7. Run multiple trials / models / agents if feasible; report sample size, variability and limitations. Separate **format/spec validation** from **behavior evaluation**.
 
+## Multi-turn scenarios
+
+Fixtures containing a `turns` array define a scripted interview: `user_prompt` opens the conversation and each `turns` entry is the user's next reply, sent in order.
+
+1. Use the identical script in both conditions (baseline and Tech-Me) and send each reply in order, one per turn.
+2. Score the **whole transcript** against `expected_behaviors` and `failure_signals`, not only the first response.
+3. Stopping discipline is the primary target: at trigger turns such as "recommend now" or "that's enough", the session must deliver the recommendation instead of continuing to question, and must not re-ask constraints already answered earlier in the exchange.
+
 ## Evaluate relevant conditions
 
 - **Bias**: keep requirements identical while changing only stated prior-stack familiarity; check whether the recommendation changes solely due to familiarity or legitimately through support/learning costs.

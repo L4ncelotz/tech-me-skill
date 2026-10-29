@@ -14,6 +14,8 @@ We evaluated Tech-Me against the baseline model across the three prioritized rep
 2. **Existing application considering architecture migration** (`migration-first-existing-project`)
 3. **User strongly preferring a familiar tech stack that may not be optimal** (`historical-preference-bias`)
 
+Each condition produced **one response per scenario (n = 1)**, single-turn prompts only; see [Limitations of This Run](#limitations-of-this-run).
+
 ### Aggregate Score Summary (0–2 scale per dimension, max 16)
 
 | Scenario ID | Baseline Score | Tech-Me Score | Key Behavioral Difference |
@@ -92,10 +94,19 @@ We evaluated Tech-Me against the baseline model across the three prioritized rep
 
 ---
 
-## Key Behavioral Findings
+## Observations from the Sampled Scenarios Only
 
-1. **Elimination of Premature Stack Lock-in:** The baseline model habitually defaults to recommending popular frontend/BaaS stacks (e.g., Next.js + Vercel + Supabase) even when fundamental product details are unknown. Tech-Me consistently avoids this trap by establishing provisional defaults and seeking the core workflow first.
-2. **High-Impact Discovery with Minor Bundling Risk:** Tech-Me significantly improves discovery efficiency compared to the baseline's unfocused question dumps. However, evaluators observed that Tech-Me bundled two distinct concerns in Scenario 1 (protocol format plus admin dashboard co-location), highlighting an area for ongoing prompt discipline.
-3. **Structured Trade-off Reasoning:** Rather than long prose lists, Tech-Me uses criteria-based comparison tables showing where an alternative wins or loses specifically for the user's workload.
-4. **Empirical Fact Anchoring Needs Rigor:** While Tech-Me transparently labels assumptions as provisional, it quoted specific runtime RAM figures in Scenario 1 (~50–80 MB for Node/Fastify, ~15–30 MB for Go) without citing measurement methodology or qualifying them as rough heuristic ranges. Evaluators penalized this under *Assumptions & Evidence*.
-5. **Honest Limitations & Provisional Assumptions:** Tech-Me transparently labels assumptions as provisional, providing a reversible foundation rather than asserting false certainty.
+With one response per condition per scenario, these observations describe the sampled transcripts above. They do not support claims of consistent behavior across models, agents, or repeated runs.
+
+1. **Premature stack commitment observed in the baseline (`unknown-scale-defaults`):** With fundamental product details unknown, the sampled baseline response prescribed a named stack (Next.js + Vercel + Supabase + Stripe) as "battle-tested" before knowing what the product does; Tech-Me asked about the core workflow and labeled traffic and budget assumptions as provisional defaults. This is one observed transcript, not a demonstrated consistent pattern.
+2. **Discovery discipline mixed:** In `migration-first-existing-project`, the sampled Tech-Me response closed with a single focused question about the actual bottleneck metric. In `historical-preference-bias`, Tech-Me instead bundled two requirements into one turn (reporting protocol/format and dashboard co-location), deviating from its own single-question rule. Question-bundling should be re-checked in future runs.
+3. **Comparison formatting:** Tech-Me's sampled responses used criteria-based comparison tables or structured cost framings (for example, the "Microservices Tax") in two of three scenarios. Formatting alone is not a quality guarantee, but it made trade-offs easier to check in these transcripts.
+4. **Unverified figures in both conditions (`historical-preference-bias`):** Tech-Me quoted rough runtime RAM ranges (~50–80 MB Node/Fastify, ~15–30 MB Go) and the baseline quoted different ranges (70–150 MB and 10–30 MB), neither with measurement methodology. Both were penalized under *Assumptions & Evidence*. Future versions should label such figures as unmeasured heuristics or verify them against primary sources.
+5. **Provisional labeling:** Where unknowns appeared (traffic, budget, scale), the sampled Tech-Me responses marked them as provisional assumptions rather than asserted facts, matching the fixture's expected behaviors.
+
+## Limitations of This Run
+
+- **Sample size:** one response per condition per scenario; generation variability was not sampled.
+- **Scenario coverage:** three of thirteen fixture scenarios; only the `unknowns`, `existing-project`, and `bias` categories were exercised. Multi-turn interviews — including the scripted stopping fixture that checks "recommend now" discipline and whether already-answered constraints get re-asked — were not part of this run.
+- **Model and configuration:** a single model (`google-antigravity/gemini-3.8-flash`) at temperature 0.0 on 2026-10-29; other models or sampling settings may behave differently.
+- **Scores describe these transcripts only** and are not certification of the skill.

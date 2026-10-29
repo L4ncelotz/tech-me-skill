@@ -13,6 +13,9 @@ __pycache__/
 dist/
 build/
 
+# Generated evaluation fixtures (regenerable, never committed)
+evals/runs/prepared_fixtures.json
+
 # Testing and coverage
 .coverage
 htmlcov/
