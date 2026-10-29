@@ -85,13 +85,23 @@ tech-me/
 ├── evals/
 │   ├── scenarios.json           # Scenario-based evaluation fixtures
 │   ├── RUBRIC.md                # Human scoring criteria
-│   └── RUNBOOK.md               # Baseline vs skill-enabled procedure
-├── scripts/validate_repo.py    # Stdlib-only structural checks
-├── tests/test_validator.py     # Automated validator regression checks
+│   ├── RUNBOOK.md               # Baseline vs skill-enabled procedure
+│   ├── RESULTS.md               # Step 6 behavioral evaluation report
+│   └── runs/                    # Recorded evaluation run outputs and metadata
+├── scripts/
+│   ├── validate_repo.py         # Stdlib-only structural checks
+│   ├── pack_release.py          # Release packaging from committed Git tree
+│   └── run_evals.py             # Evaluation harness and fixture preparation
+├── tests/
+│   ├── test_validator.py        # Automated validator regression checks
+│   └── test_scripts.py          # Packaging and eval harness regression checks
 ├── .github/workflows/validate.yml
+├── .gitattributes
+├── .gitignore
 ├── CONTRIBUTING.md
 ├── PUBLISHING.md
 ├── CHANGELOG.md
+├── SECURITY.md
 ├── LICENSE
 └── README.md
 ```
@@ -101,8 +111,13 @@ tech-me/
 Requires Python 3.10+ **for repository validation only**, not for running the skill itself.
 
 ```bash
+# 1. Structural validation and unit tests
 python scripts/validate_repo.py
 python -m unittest discover -s tests -v
+
+# 2. Evaluation harness inspection (dry-run) or fixture preparation
+python scripts/run_evals.py --dry-run
+python scripts/run_evals.py --prepare-fixtures --output evals/runs/prepared_fixtures.json
 ```
 
 Optional upstream specification validation if `skills-ref` is installed:
@@ -111,8 +126,10 @@ Optional upstream specification validation if `skills-ref` is installed:
 skills-ref validate ./skills/tech-me
 ```
 
-The local validator checks a subset of spec and evaluation-fixture structure; it is **not** a substitute for the upstream `skills-ref` validation. The evaluation scenarios and rubric enable repeatable **human review** of model behavior; no model-based evaluation results or cross-agent compatibility claims are implied. See [Evaluation Runbook](evals/RUNBOOK.md).
+Validation is organized into two distinct layers:
 
+1. **Structural Validation (`scripts/validate_repo.py`, `tests/`)**: Offline, zero-dependency deterministic checks verifying YAML frontmatter, relative reference integrity, and evaluation scenario schema conformity. (Note: this is not a substitute for the upstream `skills-ref` specification validator).
+2. **Behavioral Evaluation Suite (`evals/`)**: Scenario-based qualitative evaluations comparing baseline and skill-enabled model behavior against `evals/RUBRIC.md`. The initial evaluated run (`evals/runs/run_20261029_step6.json`) documents three sampled scenarios under a single model configuration (`google-antigravity/gemini-3.8-flash`) evaluated on 2026-10-29 (see [Evaluation Results](evals/RESULTS.md)). These findings characterize specific prompt behaviors under fixed parameters and do **not** imply cross-agent certification across arbitrary client runtimes (e.g., Cursor, Claude Code, Cline), for which multi-agent empirical testing is ongoing prior to v1.0. See [Evaluation Runbook](evals/RUNBOOK.md).
 ## Design boundaries
 
 - No required web search, MCP server, subscription, or runtime dependency.
@@ -122,7 +139,7 @@ The local validator checks a subset of spec and evaluation-fixture structure; it
 
 ## Publishing
 
-See [PUBLISHING.md](PUBLISHING.md) for GitHub setup, publishing and clean-install verification. The ZIP is **not** a published GitHub repository.
+See [PUBLISHING.md](PUBLISHING.md) for maintainer release workflows, tag creation, clean packaging, and downstream mirroring instructions.
 
 ## Contributing
 
