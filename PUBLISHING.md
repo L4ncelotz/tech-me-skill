@@ -43,10 +43,7 @@ python scripts/pack_release.py --version 0.1.0
 ```
 This creates `dist/tech-me-0.1.0.zip` containing only committed files and asserts zero leakage of `.git/`, `__pycache__`, `.pytest_cache`, `.venv`, `.env*`, or temporary files.
 
-Alternatively, if packaging directly via Git:
-```bash
-git archive --format=zip --prefix=tech-me-0.1.0/ -o dist/tech-me-0.1.0.zip HEAD
-```
+Do not package releases with a hand-rolled `git archive` command. `pack_release.py` is the single supported release path: a manual `git archive` skips the version/tag/commit verification and the forbidden-artifact scan, so an archive built that way must never be distributed.
 
 ### 4. Create GitHub Release
 Attach the generated distribution archive to the GitHub Release:
