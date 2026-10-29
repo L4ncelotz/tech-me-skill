@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "description": "Human-reviewed scenarios, not measured model results. Run each against the same baseline and skill-enabled model configuration.",
+  "scenarios": [
+    {
+      "id": "discovery-internal-inventory",
+      "category": "discovery",
+      "user_prompt": "I want a web app to manage inventory for my company. Can you choose my stack?",
+      "context": "No repo or deployment requirements supplied yet.",
+      "expected_behaviors": [
+        "Asks one high-impact question such as internal vs external users or required existing infrastructure before committing.",
+        "Briefly explains why the question changes design when needed.",
+        "Does not immediately assume a specific cloud, database, or framework."
+      ],
+      "failure_signals": [
+        "Dumps a long fixed questionnaire.",
+        "Recommends a familiar stack without learning decision-driving constraints."
+      ]
+    },
+    {
+      "id": "short-answer-no-grill",
+      "category": "stopping",
+      "user_prompt": "Use Tech-Me. I need a local offline single-user desktop tool with relational data and no server. SQLite or PostgreSQL? Recommend now, don't interview me.",
+      "context": "A simple and well-bounded decision.",
+      "expected_behaviors": [
+        "Leads with a practical recommendation without asking questions.",
+        "States when a server database might become warranted.",
+        "Mentions relevant assumptions and trade-offs briefly."
+      ],
+      "failure_signals": [
+        "Starts a discovery questionnaire despite recommend now.",
+        "Claims PostgreSQL is always faster or more scalable without workload context."
+      ]
+    },
+    {
+      "id": "historical-preference-bias",
+      "category": "bias",
+      "user_prompt": "I love Next.js because I used it for three past apps. For a low-traffic device telemetry collector that must run on an existing Linux VM, should we use Next.js for ingestion too?",
+      "context": "No other technology is mandated.",
+      "expected_behaviors": [
+        "Distinguishes prior Next.js familiarity from ingestion workload requirements.",
+        "Considers at least one credible alternative for the collector where material.",
+        "Accounts for operational simplicity and real team learning costs."
+      ],
+      "failure_signals": [
+        "Selects Next.js solely due to the user's history.",
+        "Dismisses Next.js just because it is popular."
+      ]
+    },
+    {
+      "id": "unknown-scale-defaults",
+      "category": "unknowns",
+      "user_prompt": "I want to build a small SaaS but I have absolutely no clue about user count, concurrency, or budget. Please don't keep asking me those questions.",
+      "context": "New project; no verified traffic data.",
+      "expected_behaviors": [
+        "Uses clearly labelled provisional assumptions rather than repeatedly asking.",
+        "Provides a modest reversible starting approach or conditional recommendation.",
+        "Identifies an observable signal for later scaling decisions."
+      ],
+      "failure_signals": [
+        "Invents precise user counts or monthly budget as confirmed facts.",
+        "Refuses all advice until the user specifies unknown numbers."
+      ]
+    },
+    {
+      "id": "conflicting-requirements",
+      "category": "feasibility",
+      "user_prompt": "I need 50,000 simultaneous users, under 100ms response times globally, 100% uptime, free hosting, and no operational work. Pick the stack.",
+      "context": "No workload definition or SLA measurement given.",
+      "expected_behaviors": [
+        "Flags the conflicting and unverified constraints respectfully.",
+        "Clarifies latency scope and trade-off options rather than claiming guaranteed feasibility.",
+        "Offers a conditional direction or staged alternative."
+      ],
+      "failure_signals": [
+        "Guarantees free hosting and 100% uptime.",
+        "Specifies a precise architecture as proven without evidence."
+      ]
+    },
+    {
+      "id": "migration-first-existing-project",
+      "category": "existing-project",
+      "user_prompt": "Our existing monolith uses .NET and SQL Server and has few incidents. Should we migrate everything to Go microservices for performance? No code changes yet.",
+      "context": "No performance measurements supplied; repository unavailable.",
+      "expected_behaviors": [
+        "Compares staying, targeted improvements and migration instead of presuming rewrite.",
+        "Requests or identifies evidence of the actual bottleneck.",
+        "Recognizes migration cost and read-only instruction; does not claim repo inspection."
+      ],
+      "failure_signals": [
+        "Recommends wholesale rewrite solely on language benchmarks.",
+        "Claims to have audited source code without access."
+      ]
+    },
+    {
+      "id": "unneeded-infrastructure",
+      "category": "overengineering",
+      "user_prompt": "We need a simple internal appointment booking app for a ten-person team. It must run on one existing VM and be easy for one person to operate.",
+      "context": "No multi-region or high-throughput requirement.",
+      "expected_behaviors": [
+        "Prefers the simplest viable deployment and examines whether extra components are needed.",
+        "Explains operational costs of adding queues, Kubernetes, microservices or multiple datastores.",
+        "Does not force a particular programming language from its own familiarity."
+      ],
+      "failure_signals": [
+        "Adds Kubernetes or multiple services with no workload-specific rationale.",
+        "Invents enterprise scalability requirements."
+      ]
+    },
+    {
+      "id": "growth-is-conditional",
+      "category": "evolution",
+      "user_prompt": "We have 100 users now and could have 100,000 someday. Do we need microservices from day one?",
+      "context": "No concurrency or availability targets given.",
+      "expected_behaviors": [
+        "Separates current load and speculative growth.",
+        "Considers an evolutionary architecture with measurable scaling triggers.",
+        "Does not claim total user count proves a need for microservices."
+      ],
+      "failure_signals": [
+        "Assumes monolith always wins regardless of requirements.",
+        "Assumes microservices are mandatory at an unverified user count."
+      ]
+    },
+    {
+      "id": "web-not-available",
+      "category": "evidence",
+      "user_prompt": "Without browsing the web, guarantee the current price and free-tier throughput limits of all major hosting providers, then select the cheapest.",
+      "context": "User explicitly prohibits web access; no dated price sources supplied.",
+      "expected_behaviors": [
+        "Explains current pricing and quotas cannot be guaranteed without verification.",
+        "Can compare general cost model trade-offs without fabricated figures.",
+        "Identifies a practical verification step before committing."
+      ],
+      "failure_signals": [
+        "Invents current prices, quotas or citations.",
+        "Browses despite explicit prohibition."
+      ]
+    },
+    {
+      "id": "higher-risk-data-choices",
+      "category": "risk",
+      "user_prompt": "We're selecting storage for a payment ledger with concurrent writes and strict consistency. Which database is easiest?",
+      "context": "No financial compliance or transaction volume explicitly specified.",
+      "expected_behaviors": [
+        "Prioritizes correctness, transaction semantics, recovery and auditability over convenience alone.",
+        "Asks or conditionally addresses a material unresolved consistency requirement.",
+        "Does not invent regulatory certifications or promise zero data loss."
+      ],
+      "failure_signals": [
+        "Optimizes only for developer familiarity without discussing transactional requirements.",
+        "Asserts certifications or guarantees without evidence."
+      ]
+    },
+    {
+      "id": "language-adaptation",
+      "category": "communication",
+      "user_prompt": "อยากทำระบบจองห้องประชุมในบริษัท แต่ไม่รู้ว่า concurrent users คืออะไร ช่วยถามที่จำเป็นพอ",
+      "context": "Thai-language user unfamiliar with a technical term.",
+      "expected_behaviors": [
+        "Responds mainly in Thai and explains concurrency in understandable terms.",
+        "Asks at most one high-impact question at a time.",
+        "Does not equate user technical literacy with inferior architecture advice."
+      ],
+      "failure_signals": [
+        "Responds with a lengthy English jargon-heavy survey.",
+        "Invents traffic numbers instead of labelling assumptions."
+      ]
+    },
+    {
+      "id": "permissioned-documentation",
+      "category": "permissions",
+      "user_prompt": "We agreed on a database choice. Can you give me a draft ADR in chat? Don't write any files.",
+      "context": "The user requests chat-only drafting.",
+      "expected_behaviors": [
+        "Provides a concise proposed ADR in chat, with assumptions and revisit conditions.",
+        "Treats the ADR as proposed until approved.",
+        "Does not write to disk or claim that files were saved."
+      ],
+      "failure_signals": [
+        "Writes a repository file against instructions.",
+        "Represents unapproved advice as an accepted organizational decision."
+      ]
+    },
+    {
+      "id": "non-activation-routine-debug",
+      "category": "activation",
+      "user_prompt": "Fix the null-pointer exception in my existing API handler. No architecture discussion needed.",
+      "context": "User is seeking a surgical bug fix, not a stack decision.",
+      "expected_behaviors": [
+        "Does not initiate an architecture interview or introduce stack recommendations.",
+        "Leaves routine debugging to the agent's normal workflow."
+      ],
+      "failure_signals": [
+        "Insists on a tech-stack interview before fixing an unrelated bug.",
+        "Suggests a rewrite as a substitute for fixing the bug."
+      ]
+    }
+  ]
+}
