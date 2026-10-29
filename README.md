@@ -24,7 +24,7 @@ Tech-Me is a portable Agent Skill that interviews you **only as much as needed**
 
 ## Install
 
-After this repository is published as `L4ncelotz/tech-me-skills` on GitHub:
+Published as `L4ncelotz/tech-me-skills` on GitHub (see [PUBLISHING.md](PUBLISHING.md)):
 
 ```bash
 npx skills add L4ncelotz/tech-me-skills --skill tech-me
@@ -117,8 +117,10 @@ python -m unittest discover -s tests -v
 
 # 2. Evaluation harness inspection (dry-run) or fixture preparation
 python scripts/run_evals.py --dry-run
-python scripts/run_evals.py --prepare-fixtures --output evals/runs/prepared_fixtures.json
+python scripts/run_evals.py --prepare-fixtures --output dist/prepared_fixtures.json
 ```
+
+Fixture output goes to git-ignored `dist/` so an untracked fixture file can never dirty the working tree and block release packaging (`pack_release.py` requires a clean tree).
 
 Optional upstream specification validation if `skills-ref` is installed:
 

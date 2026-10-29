@@ -2,9 +2,10 @@
 """Packaging script to create clean release ZIP archives for Tech-Me.
 
 Packages only committed files from a Git tree (git archive).
-Enforces a clean working tree (no uncommitted changes or untracked files)
-and verifies zero leakage of .git/, Python caches, virtual environments,
-environment files (.env*), or build artifacts. Standard library only.
+Enforces a clean working tree (no uncommitted changes or untracked files),
+verifies that --version matches an annotated Git tag (v<version>) pointing at
+the packaged ref, and verifies zero leakage of .git/, Python caches, virtual
+environments, environment files (.env*), or build artifacts. Standard library only.
 """
 
 import argparse
@@ -101,6 +102,18 @@ def verify_git_ref(repo_root: Path, ref: str) -> str:
         raise RuntimeError(f"Git ref '{ref}' not found or invalid: {e}") from e
 
 
+def verify_release_tag(repo_root: Path, tag: str) -> str:
+    """Return the commit hash a release tag points at; fail closed when it is missing."""
+    try:
+        return verify_git_ref(repo_root, tag)
+    except RuntimeError as exc:
+        raise RuntimeError(
+            f"Release tag '{tag}' not found. Release packaging requires an annotated tag matching "
+            "the --version argument (see PUBLISHING.md). Pass --allow-untagged to archive "
+            "untagged refs for local builds only."
+        ) from exc
+
+
 def pack_release(
     version: str,
     output_dir: Path,
@@ -108,21 +121,33 @@ def pack_release(
     ref: str = "HEAD",
     prefix: str | None = None,
     check_clean: bool = True,
+    require_tag: bool = True,
 ) -> Path:
     """Create a clean release ZIP archive from a committed Git tree."""
     if check_clean:
         assert_clean_git_tree(repo_root)
 
     commit_sha = verify_git_ref(repo_root, ref)
+    clean_version = version.lstrip("v")
+    tag_name = f"v{clean_version}"
+
+    if require_tag:
+        tag_commit = verify_release_tag(repo_root, tag_name)
+        if tag_commit != commit_sha:
+            raise RuntimeError(
+                f"Git tag '{tag_name}' ({tag_commit[:8]}) does not point at ref '{ref}' ({commit_sha[:8]}). "
+                "Version, tag and ref must agree on one commit before packaging a release; "
+                "re-tag or pass --ref with the tagged refs' commit (see PUBLISHING.md)."
+            )
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    clean_version = version.lstrip("v")
     zip_name = f"tech-me-{clean_version}.zip"
     zip_path = output_dir / zip_name
 
     archive_prefix = f"tech-me-{clean_version}/" if prefix is None else prefix
 
-    print(f"Packaging Tech-Me v{clean_version} from Git commit {commit_sha[:8]} (ref: {ref})...")
+    tag_note = f"tag {tag_name}" if require_tag else "untagged (tag verification skipped)"
+    print(f"Packaging Tech-Me v{clean_version} ({tag_note}) from Git commit {commit_sha[:8]} (ref: {ref})...")
 
     # Run git archive directly to extract only the committed tree
     cmd = [
@@ -196,6 +221,14 @@ def main() -> int:
         help="Do not prepend root folder prefix inside ZIP",
     )
     parser.add_argument(
+        "--allow-untagged",
+        action="store_true",
+        help=(
+            "Skip release tag verification. For local archives only; "
+            "do not publish untagged builds."
+        ),
+    )
+    parser.add_argument(
         "--repo-root",
         type=Path,
         default=ROOT,
@@ -213,6 +246,7 @@ def main() -> int:
             ref=args.ref,
             prefix=prefix,
             check_clean=True,
+            require_tag=not args.allow_untagged,
         )
         return 0
     except Exception as e:

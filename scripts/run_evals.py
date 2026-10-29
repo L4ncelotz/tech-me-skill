@@ -60,6 +60,7 @@ def build_evaluation_payload(
     return {
         "scenario_id": scenario["id"],
         "category": scenario.get("category", "unknown"),
+        "predetermined_followups": scenario.get("turns", []),
         "baseline_prompt": {
             "system_prompt": BASELINE_SYSTEM_PROMPT,
             "user_prompt": user_prompt,
@@ -152,8 +153,8 @@ def main() -> int:
         print(f"Error initializing evaluation harness: {e}", file=sys.stderr)
         return 1
 
-    # Check execution mode
-    if not args.dry_run and not args.prepare-fixtures if hasattr(args, "prepare-fixtures") else (not args.dry_run and not args.prepare_fixtures):
+    # Check execution mode: fail closed when run without --dry-run or --prepare-fixtures
+    if not args.dry_run and not args.prepare_fixtures:
         print(
             "Error: Live evaluation runner is not configured in this environment.\n"
             "Tech-Me evaluation fixtures require an active LLM evaluation harness to run.\n"
@@ -182,6 +183,7 @@ def main() -> int:
             print(f"  Context: {sc.get('context', 'None')}")
             print(f"  Expected behaviors: {len(sc.get('expected_behaviors', []))} rules")
             print(f"  Failure signals: {len(sc.get('failure_signals', []))} rules")
+            print(f"  Scripted follow-up turns: {len(sc.get('turns', []))}")
 
         print("\nDry-run completed. (No LLM API invoked; no evaluation performed).")
         return 0

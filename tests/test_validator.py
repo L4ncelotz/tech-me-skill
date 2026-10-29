@@ -60,6 +60,25 @@ class ValidationTests(unittest.TestCase):
             )
             self.assertTrue(any("Unsupported frontmatter" in err for err in validate_skill(skill)))
 
+    def test_accepts_scripted_turns(self):
+        fixture = json.loads((ROOT / "evals/scenarios.json").read_text(encoding="utf-8"))
+        multi_turn = [s for s in fixture["scenarios"] if s.get("turns")]
+        self.assertTrue(multi_turn, "The scenario set must include at least one multi-turn (turns) fixture.")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(json.dumps(fixture), encoding="utf-8")
+            self.assertEqual(validate_scenarios(path), [])
+
+    def test_rejects_malformed_scripted_turns(self):
+        fixture = json.loads((ROOT / "evals/scenarios.json").read_text(encoding="utf-8"))
+        fixture["scenarios"][0]["turns"] = "recommend now"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(json.dumps(fixture), encoding="utf-8")
+            self.assertTrue(
+                any("turns must be a non-empty list of strings" in err for err in validate_scenarios(path))
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
