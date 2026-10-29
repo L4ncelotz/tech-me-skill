@@ -1,0 +1,62 @@
+name: Bug Report
+description: File a bug report or unexpected behavior for Tech-Me
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please check existing issues to see if this has already been reported.
+        Do not include sensitive data, real credentials, or proprietary information in reports.
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Problem Description
+      description: A clear and concise description of the bug or decision failure.
+      placeholder: Describe the problem...
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Concrete steps to reproduce the behavior.
+      placeholder: |
+        1. In agent environment...
+        2. Provide task or prompt...
+        3. Observe skill response...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-vs-actual
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What did you expect the agent/skill to do, and what actually happened?
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+  - type: input
+    id: ai-agent-model
+    attributes:
+      label: AI Agent and Model
+      description: Which AI agent runtime and underlying model were used?
+      placeholder: e.g., Claude Code (claude-3-7-sonnet), Cursor (gpt-4o), Cline, Codex, etc.
+    validations:
+      required: true
+  - type: input
+    id: tech-me-version
+    attributes:
+      label: Tech-Me Version
+      description: Tech-Me release version or commit SHA.
+      placeholder: e.g., v0.1.0 or main (abc1234)
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any relevant logs, transcripts, evaluation notes, or scenario references.
+    validations:
+      required: false
