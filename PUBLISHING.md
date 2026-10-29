@@ -17,14 +17,14 @@ git init
 git add .
 git commit -m "Initial Tech-Me agent skill"
 git branch -M main
-gh repo create L4ncelotz/tech-me --public --source . --remote origin --push
+gh repo create L4ncelotz/tech-me-skills --public --source . --remote origin --push
 ```
 
-The command assumes `L4ncelotz/tech-me` is available and the current GitHub account has write access. If the repository already exists, **do not** overwrite it; inspect the existing repository and use normal Git workflows.
+The command assumes `L4ncelotz/tech-me-skills` is available and the current GitHub account has write access. If the repository already exists, **do not** overwrite it; inspect the existing repository and use normal Git workflows.
 
 ## Publish without GitHub CLI
 
-1. Create a **public empty repository** named `tech-me` on GitHub. Do **not** auto-initialize with a README or license (both exist in this package).
+1. Create a **public empty repository** named `tech-me-skills` on GitHub. Do **not** auto-initialize with a README or license (both exist in this package).
 2. From inside the extracted directory:
 
 ```bash
@@ -32,7 +32,7 @@ git init
 git add .
 git commit -m "Initial Tech-Me agent skill"
 git branch -M main
-git remote add origin https://github.com/L4ncelotz/tech-me.git
+git remote add origin https://github.com/L4ncelotz/tech-me-skills.git
 git push -u origin main
 ```
 
@@ -43,7 +43,7 @@ Authenticate with your own account as required by GitHub. Never place a token or
 Run the repository's GitHub Actions workflow and, where available, upstream `skills-ref` validation. Then test a clean install:
 
 ```bash
-npx skills add L4ncelotz/tech-me --skill tech-me
+npx skills add L4ncelotz/tech-me-skills --skill tech-me
 ```
 
 Confirm your agent reads the skill on an architecture request, and that it does not activate for a routine bug fix. A public repository does not guarantee immediate listing or any particular ranking on skills.sh; check the live directory separately.

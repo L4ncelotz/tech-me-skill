@@ -12,6 +12,10 @@ All notable changes to this project should be documented here.
 - Scenario-based evaluation fixtures, human scoring rubric, and comparison runbook.
 - Stdlib-only repository validator, tests, and validation CI workflow.
 
+### Changed
+
+- Updated canonical repository references and installation command to `L4ncelotz/tech-me-skills`.
+
 ### Limitations
 
 - Initial draft: cross-agent behavior and comparative quality have **not yet been empirically verified**.
