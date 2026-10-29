@@ -1,51 +1,79 @@
-# Publish Tech-Me to GitHub
+# Publishing and Release Guide
 
-This package is not automatically published. Create a public repository under the account that will maintain it, and review the contents before pushing.
+This document covers the release, packaging, and distribution workflow for Tech-Me.
 
-## Prerequisites
+## Canonical Repository Status
 
-- Git
-- A GitHub account with permission to create repositories
-- GitHub CLI (`gh`) installed and signed in **or** a manually created empty GitHub repo
+The canonical upstream repository is live at:
+**`https://github.com/L4ncelotz/tech-me-skills`**
 
-## Publish using GitHub CLI
+Do not run initial `git init` or destructive force-pushes against this repository. Use standard Git feature-branch and tagging workflows.
 
-From inside the extracted `tech-me` directory (PowerShell, Command Prompt or a POSIX shell with `git` and `gh` available):
+---
 
+## Release & Tagging Workflow (Maintainers)
+
+Follow these steps when cutting a new version release:
+
+### 1. Pre-release Verification
+Run all local validation and evaluation checks:
 ```bash
-git init
-git add .
-git commit -m "Initial Tech-Me agent skill"
-git branch -M main
-gh repo create L4ncelotz/tech-me-skills --public --source . --remote origin --push
+python scripts/validate_repo.py
+python -m unittest discover -s tests -v
+python scripts/run_evals.py --dry-run
+```
+Ensure `CHANGELOG.md` reflects all changes and version bumps.
+
+### 2. Commit and Tag
+Ensure the working tree is completely clean, then create and push an annotated Git tag with semantic versioning:
+```bash
+# Example for v0.1.0
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin main
+git push origin v0.1.0
 ```
 
-The command assumes `L4ncelotz/tech-me-skills` is available and the current GitHub account has write access. If the repository already exists, **do not** overwrite it; inspect the existing repository and use normal Git workflows.
-
-## Publish without GitHub CLI
-
-1. Create a **public empty repository** named `tech-me-skills` on GitHub. Do **not** auto-initialize with a README or license (both exist in this package).
-2. From inside the extracted directory:
-
+### 3. Build Clean Distribution Package
+Before creating the GitHub release, package the release archive. Release packaging requires a clean, committed Git working tree and extracts exclusively from the committed Git tree (`git archive`):
 ```bash
-git init
-git add .
-git commit -m "Initial Tech-Me agent skill"
-git branch -M main
-git remote add origin https://github.com/L4ncelotz/tech-me-skills.git
-git push -u origin main
+# Automated packaging with integrity assertions
+python scripts/pack_release.py --version 0.1.0
+```
+This creates `dist/tech-me-0.1.0.zip` containing only committed files and asserts zero leakage of `.git/`, `__pycache__`, `.pytest_cache`, `.venv`, `.env*`, or temporary files.
+
+Alternatively, if packaging directly via Git:
+```bash
+git archive --format=zip --prefix=tech-me-0.1.0/ -o dist/tech-me-0.1.0.zip HEAD
 ```
 
-Authenticate with your own account as required by GitHub. Never place a token or secret in a command or repository file.
+### 4. Create GitHub Release
+Attach the generated distribution archive to the GitHub Release:
+```bash
+gh release create v0.1.0 dist/tech-me-0.1.0.zip \
+  --title "v0.1.0 - Initial Evaluated Release" \
+  --notes-file CHANGELOG.md
+```
 
-## After publishing
+---
+## Downstream Forking & Mirroring
 
-Run the repository's GitHub Actions workflow and, where available, upstream `skills-ref` validation. Then test a clean install:
+If you are maintaining a private fork or mirror under another GitHub account:
+1. Fork `L4ncelotz/tech-me-skills` via the GitHub UI or `gh repo fork L4ncelotz/tech-me-skills`.
+2. Configure your downstream remote:
+   ```bash
+   git remote add downstream https://github.com/<your-user>/tech-me-skills.git
+   git push -u downstream main
+   ```
+3. Never overwrite or force-push to upstream `origin`.
+
+---
+
+## Clean Installation Verification
+
+After publishing a tag or release, verify that agent runtimes can install and consume the skill cleanly:
 
 ```bash
 npx skills add L4ncelotz/tech-me-skills --skill tech-me
 ```
 
-Confirm your agent reads the skill on an architecture request, and that it does not activate for a routine bug fix. A public repository does not guarantee immediate listing or any particular ranking on skills.sh; check the live directory separately.
-
-For a first release, record actual baseline-vs-skill evaluation results using `evals/RUNBOOK.md` before claiming validated model improvements or cross-agent support.
+Confirm your agent runtime reads the skill when presented with an architecture decision request, and that it does not falsely activate for routine bug fixes or syntax questions.

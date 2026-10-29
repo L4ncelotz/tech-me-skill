@@ -5,3 +5,18 @@ __pycache__/
 .DS_Store
 .env
 .env.*
+
+# Distribution and build artifacts
+*.zip
+*.tar.gz
+*.tgz
+dist/
+build/
+
+# Testing and coverage
+.coverage
+htmlcov/
+
+# Temporary and log files
+*.tmp
+*.log
