@@ -103,15 +103,40 @@ def verify_git_ref(repo_root: Path, ref: str) -> str:
 
 
 def verify_release_tag(repo_root: Path, tag: str) -> str:
-    """Return the commit hash a release tag points at; fail closed when it is missing."""
-    try:
-        return verify_git_ref(repo_root, tag)
-    except RuntimeError as exc:
+    """Return the commit hash the annotated release tag points at; fail closed otherwise.
+
+    Resolves the tag through the refs/tags namespace only, so a branch sharing the
+    tag name cannot satisfy the check, and requires the referenced object to be an
+    annotated tag object rather than a lightweight tag pointing directly at a commit.
+    """
+    probe = f"refs/tags/{tag}"
+    result = subprocess.run(
+        ["git", "cat-file", "-t", probe],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        hint = ""
+        branch_probe = subprocess.run(
+            ["git", "show-ref", "--verify", f"refs/heads/{tag}"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        if branch_probe.returncode == 0:
+            hint = f" (a branch named '{tag}' exists, but release tags must live in refs/tags/)"
         raise RuntimeError(
-            f"Release tag '{tag}' not found. Release packaging requires an annotated tag matching "
-            "the --version argument (see PUBLISHING.md). Pass --allow-untagged to archive "
+            f"Release tag '{tag}' not found{hint}. Release packaging requires an annotated tag "
+            "matching the --version argument (see PUBLISHING.md). Pass --allow-untagged to archive "
             "untagged refs for local builds only."
-        ) from exc
+        )
+    if result.stdout.strip() != "tag":
+        raise RuntimeError(
+            f"Git tag '{tag}' is a lightweight tag pointing directly at a commit object. "
+            "Release packaging requires an annotated tag created with 'git tag -a' (see PUBLISHING.md)."
+        )
+    return verify_git_ref(repo_root, probe)
 
 
 def pack_release(

@@ -244,6 +244,29 @@ class ScriptTests(unittest.TestCase):
             zip_path = pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir)
             self.assertTrue(zip_path.is_file())
 
+    def test_pack_release_rejects_lightweight_release_tag(self):
+        """A lightweight tag must not satisfy release packaging even when the name matches."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir)
+            subprocess.run(["git", "tag", "v0.1.0"], cwd=repo_dir, capture_output=True, check=True)
+            out_dir = Path(tmp_dir) / "dist"
+            with self.assertRaises(RuntimeError) as ctx:
+                pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir, check_clean=False)
+            self.assertIn("lightweight tag", str(ctx.exception))
+            self.assertFalse((out_dir / "tech-me-0.1.0.zip").exists())
+
+    def test_pack_release_rejects_branch_named_like_release_tag(self):
+        """A branch sharing the version name must not satisfy release packaging."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo_dir = create_git_repo(tmp_dir)
+            subprocess.run(["git", "branch", "v0.1.0"], cwd=repo_dir, capture_output=True, check=True)
+            out_dir = Path(tmp_dir) / "dist"
+            with self.assertRaises(RuntimeError) as ctx:
+                pack_release(version="0.1.0", output_dir=out_dir, repo_root=repo_dir, check_clean=False)
+            self.assertIn("Release tag 'v0.1.0' not found", str(ctx.exception))
+            self.assertIn("a branch named 'v0.1.0' exists", str(ctx.exception))
+            self.assertFalse((out_dir / "tech-me-0.1.0.zip").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

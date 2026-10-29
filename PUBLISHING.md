@@ -36,7 +36,7 @@ git push origin v0.1.0
 ### 3. Build Clean Distribution Package
 Before creating the GitHub release, package the release archive. Release packaging requires a clean, committed Git working tree, verifies that `--version` matches an annotated Git tag (`v<version>`) pointing at the packaged ref, and extracts exclusively from the committed Git tree (`git archive`):
 
-Fail closed cases: missing tag, tag/ref commit mismatch, uncommitted changes, or leaked artifacts. Use `--allow-untagged` only for throwaway local archives; never publish one.
+Fail closed cases: missing tag, non-annotated tag objects (a lightweight tag points directly at a commit), a branch sharing the tag name, tag/ref commit mismatch, uncommitted changes, or leaked artifacts. Use `--allow-untagged` only for throwaway local archives; never publish one.
 ```bash
 # Automated packaging with integrity assertions
 python scripts/pack_release.py --version 0.1.0
